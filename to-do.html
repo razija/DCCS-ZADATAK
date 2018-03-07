@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>DCCS ZADATAK</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+
+
+<style>
+     .buttons{
+	  float: right;
+	  width: 25%;
+	 }
+	 ul li {
+	 padding-top: 10px;
+	 padding-bottom: 10px;
+	 height: 50%;
+	 }
+	 ul li:hover {
+      background: #ddd;
+     }
+	 .remove{
+	 border: 0px;
+	 float: right;
+	 background: url('trash.png');
+	 width: 16px;
+	 height: 16px;
+	 margin-right: 8px;
+	 }
+	 #spaceRow{
+	 padding-top: 20px;
+	 }
+	 @media only screen and (max-width: 500px){
+	 .buttons{ width: 35%;}
+	 .remove{ margin-right: 2px;}
+	 }
+</style>
+
+
+<body>
+
+<div class="container">
+  <h2>Minimalist to-do list</h2>
+  
+  <form class="form-inline">
+  
+       <div class="form-group">
+	        <label class="sr-only" for="inlineFormInput">Text</label>
+            <input type="text" class="form-control" placeholder="Type in to-do list" id="myInput">
+	   </div>
+	   <button type="button" class="btn btn-primary" id="add">Add new</button>
+	 
+	   <button type="button" class="btn btn-primary" onclick="exportToCSV('members.csv')">Export</button>
+       
+  </form>
+  
+  <div class="row" id="spaceRow">
+       <div class="col-xs-4 col-sm-3"><dt>To-do text</dt></div>
+       <div class="col-xs-3 col-sm-2 text-right"><dt>Completed</dt></div>
+	   <div class="col-xs-2 col-sm-1 text-right"><dt>Delete</dt></div>
+  </div>
+  
+  <div class="row">
+     <div class="col-xs-9 col-sm-6">
+            <ul class="list-unstyled" id="todo" class="list-group"> </ul>
+     </div>
+  </div>
+  
+  
+<script>
+
+var data = (localStorage.getItem('todoList')) ? JSON.parse(localStorage.getItem('todoList')):{todo: [], completed: [], removed: []};
+
+renderToDoList();
+	 
+document.getElementById('add').addEventListener('click', function () { 
+     var value = document.getElementById('myInput').value;
+	 if (value){
+	     addItemTodo(value);
+	     document.getElementById('myInput').value = '';
+     }
+});
+
+function renderToDoList(){
+if (!data.todo.length && !data.completed.length) return;
+
+for (var i = 0; i < data.todo.length; i++) {
+    var value = data.todo[i];
+	
+	if (data.removed[i] == "0"){
+	     if (data.completed[i] == "1")
+	         addItemTodoToDOM(value,'1');
+	     else
+	         addItemTodoToDOM(value,'0');
+	}
+}
+}
+
+function dataObjectUpdate() {
+     localStorage.setItem('todoList', JSON.stringify(data));
+}
+
+function addItemTodo (value){
+     addItemTodoToDOM(value);
+	 
+	 data.todo.push(value);
+	 data.completed.push("0");
+	 data.removed.push("0");
+	 dataObjectUpdate();
+}
+
+function removeItem(){
+     var item = this.parentNode.parentNode;
+	 var parent = item.parentNode;
+	 var value = item.innerText;
+	 
+	 var i = data.todo.indexOf(value);
+	 data.completed[i] = "1";
+	 data.removed[i] = "1";
+	 localStorage.setItem('todoList', JSON.stringify(data));
+	 
+	 parent.removeChild(item);
+}
+
+function checkItem (){
+	 this.checked=true;
+	 var item = this.parentNode.parentNode;
+	 var value = item.innerText;
+	 
+	 var i = data.todo.indexOf(value);
+	 data.completed[i] = "1";
+	 localStorage.setItem('todoList', JSON.stringify(data));
+}
+
+function addItemTodoToDOM(text, completed)
+{
+     var list = document.getElementById('todo');
+	 
+	 var item = document.createElement('li');
+	 item.innerText = text;
+	 
+	 var buttons = document.createElement('span');
+	 buttons.classList.add('buttons');
+	 
+	 var remove = document.createElement('button');
+	 remove.classList.add('remove');
+	 remove.addEventListener('click', removeItem);
+	 
+	 if (completed != "1"){
+	     var complete = document.createElement('input');
+	     complete.setAttribute("type", "checkbox");
+	     complete.classList.add('complete');
+	     complete.addEventListener('click', checkItem);
+	 }
+	 else{
+	     var complete = document.createElement('input');
+	     complete.setAttribute("type", "checkbox");
+	     complete.classList.add('complete');
+	     complete.checked = true;
+	 }
+	 
+	 buttons.appendChild(complete);
+	 buttons.appendChild(remove);
+	 item.appendChild(buttons);
+	 
+	  list.insertBefore(item, list.childNodes[0]);
+}
+
+function downloadCSV(csv, filename) {
+    var csvFile;
+    var downloadLink;
+
+    // CSV file
+    csvFile = new Blob([csv], {type: "text/csv"});
+
+    // Download link
+    downloadLink = document.createElement("a");
+
+    // File name
+    downloadLink.download = filename;
+
+    // Create a link to the file
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+
+    // Hide download link
+    downloadLink.style.display = "none";
+
+    // Add the link to DOM
+    document.body.appendChild(downloadLink);
+
+    // Click download link
+    downloadLink.click();
+} 
+
+function exportToCSV(filename) {
+    var csv = [];
+	var list = document.getElementsByTagName("li");
+	var items = [];
+    
+    for (var i = 0; i < list.length; i++) {
+        items[i] = list[i].innerText;	
+    }
+	
+	csv.push(items.join(",")); 
+    // Download CSV file
+    downloadCSV(csv, filename);
+	
+}
+
+</script>
+</body>
+</html>
+
